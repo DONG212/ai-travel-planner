@@ -14,22 +14,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
 
       - name: Build client
-        env:
-          NODE_ENV: development
         run: |
           cd client
-          npm install --include=dev
+          npm ci
           npm run build
 
       - name: Build server
-        env:
-          NODE_ENV: development
         run: |
           cd server
-          npm install --include=dev
+          npm ci
           npm run build
 
       - name: Build docker image
@@ -40,3 +36,13 @@ jobs:
 
       - name: Push image
         run: docker push ${{ secrets.REGISTRY }}/ai-travel-planner:latest
+
+      # 额外：保存镜像为 tar，上传为构建产物，满足“可直接下载运行”要求
+      - name: Save image as tar
+        run: docker save ${{ secrets.REGISTRY }}/ai-travel-planner:latest -o ai-travel-planner.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-travel-planner-image
+          path: ai-travel-planner.tar

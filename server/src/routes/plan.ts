@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { generateItinerary } from "../services/llm";
+import { generateItinerary } from "../services/llm.js";
 
 const router = Router();
 

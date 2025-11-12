@@ -1,5 +1,5 @@
 # ---- build client ----
-FROM registry.cn-hangzhou.aliyuncs.com/library/node:24 AS client
+FROM public.ecr.aws/docker/library/node:24 AS client
 WORKDIR /app/client
 COPY client/package.json client/package-lock.json* ./ 
 RUN npm install
@@ -7,7 +7,7 @@ COPY client ./
 RUN npm run build
 
 # ---- build server ----
-FROM registry.cn-hangzhou.aliyuncs.com/library/node:24 AS server
+FROM public.ecr.aws/docker/library/node:24 AS server
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json* ./ 
 RUN npm install
@@ -15,7 +15,7 @@ COPY server ./
 RUN npm run build
 
 # ---- runtime ----
-FROM registry.cn-hangzhou.aliyuncs.com/library/node:24-slim
+FROM public.ecr.aws/docker/library/node:24-slim
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=server /app/server/dist ./server/dist

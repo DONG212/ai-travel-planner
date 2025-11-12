@@ -15,6 +15,8 @@ export type BudgetInput = {
   days: number;
   people: number;
   planSummary: string;
+  budget?: number;
+  preferences?: string[];
 };
 
 const LLM_CACHE = new Map<string, { ts: number; data: any }>();
@@ -117,9 +119,9 @@ export async function generateItinerary(input: PlanInput, opts: { provider: Prov
          "restaurants": ["string"]
        }
        \u8981\u6c42\uff1a
-       - \u6bcf\u5929\u5185\u5bb9\u4e0d\u91cd\u590d\uff0c\u7ed9\u51fa\u5177\u4f53\u5730\u5740\u6216\u540d\u79f0\uFF0C\u6709\u5750\u6807\u4F9D\u7167 lat/lng \u586B\u5199\u3002
-       - \u4F18\u5148\u7F8E\u98DF/\u52A8\u6F2B/\u4EB2\u5B50\u7B49\u504F\u597D\uFF0C\u5F00\u653E\u65F6\u95F4\u3001\u95E8\u7968\u3001\u7B80\u4ECB\u548C\u5C0F\u63D0\u793A\u5C3D\u91CF\u586B\u5199\u3002
-       - \u8DEF\u7EBF\u987A\u5E8F\u4EE5 route.order \u4E3A\u51C6\uFF0C\u907F\u514D\u56DE\u5934\u8DEF\u3002`;
+       - \u6bcf\u5929\u5185\u5bb9\u4e0d\u5f97\u91cd\u590d\uff0c\u4e0d\u540c\u504f\u597d\u548c\u5730\u70b9\u3002
+       - \u7ed9\u51fa\u5177\u4f53\u5730\u5740/\u540d\u79f0\uff0c\u4fbf\u4e8e\u5730\u7406\u7f16\u7801\uff1b\u6709\u5750\u6807\u5219\u4f9d\u7167 lat/lng \u586b\u5199\u3002
+       - \u8def\u7ebf\u987a\u5e8f\u4ee5 route.order \u4e3a\u51c6\u3002`;
     const body = {
       model,
       input: { prompt: `\u76EE\u7684\u5730:${input.destination}\uFF0C\u5929\u6570:${input.days}\uFF0C\u9884\u7B97:${input.budget}\uFF0C\u4EBA\u6570:${input.people}\uFF0C\u504F\u597D:${input.preferences.join(",")}\n${structure}` },
@@ -151,6 +153,8 @@ export async function generateItinerary(input: PlanInput, opts: { provider: Prov
 }
 
 export async function estimateBudget(input: BudgetInput, opts: { provider: Provider; apiKey: string }) {
+  const prefs = Array.isArray(input.preferences) ? input.preferences : [];
+  const budget = input.budget ?? 0;
   if (opts.provider === "MOCK") {
     const base = input.days * input.people * 500;
     return {
@@ -158,13 +162,13 @@ export async function estimateBudget(input: BudgetInput, opts: { provider: Provi
       breakdown: { transport: base * 0.3, hotels: base * 0.4, food: base * 0.2, tickets: base * 0.1 }
     };
   }
-  const prompt = `\u6839\u636e\u4ee5\u4e0b\u884c\u7a0b\u6982\u8981\u4f30\u7b97\u9884\u7b97\uff08\u542b\u4ea4\u901a\u3001\u4f4f\u5bbf\u3001\u9910\u996e\u3001\u95e8\u7968\uff09\uff1a${input.planSummary}\uff1b\u76ee\u7684\u5730${input.destination}\uff1b\u5929\u6570${input.days}\uff1b\u4eba\u6570${input.people}`;
+  const prompt = `根据以下行程概要估算预算（含交通、住宿、餐饮、门票）：${input.planSummary}；目的地${input.destination}；天数${input.days}；人数${input.people}`;
   if (opts.provider === "OPENAI") {
     const body = {
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "\u4f60\u662f\u65c5\u884c\u89c4\u5212\u52a9\u624b\u3002\u8bf7\u4ec5\u4ee5\u7eaf JSON \u8f93\u51fa\u3002JSON schema: { summary: string, days: [{ day: number, activities: [{ timeSlot: '\u4e0a\u5348|\u4e0b\u5348|\u665a\u4e0a', name: string, address?: string, city?: string, lat?: number, lng?: number }], notes?: string, route: { order: string[] } }], transport: string[], hotels: string[], restaurants: string[] } \u8981\u6c42\uff1a\u6bcf\u5929\u5185\u5bb9\u4e0d\u5f97\u91cd\u590d\uff0c\u4e3a\u5bb6\u5e38\u6536\u85cf\u7684\u5173\u952e\u6253\u5361\u70b9\u3002\u6709\u5750\u6807\u5c31\u586b lat/lng\uff0c\u6ca1\u6709\u5c31\u7559\u7a7a\u3002" },
-        { role: "user", content: `\u76ee\u7684\u5730\uff1a${input.destination}\uff1b\u5929\u6570\uff1a${input.days}\uff1b\u9884\u7b97\uff1a${input.budget}\uff1b\u4eba\u6570\uff1a${input.people}\uff1b\u504f\u597d\uff1a${input.preferences.join(",")}` }
+        { role: "system", content: "你是旅行规划助手。请仅以纯 JSON 输出..." },
+        { role: "user", content: `目的地：${input.destination}；天数：${input.days}；预算：${budget}；人数：${input.people}；偏好：${prefs.join(",")}` }
       ]
     };
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -182,54 +186,19 @@ export async function estimateBudget(input: BudgetInput, opts: { provider: Provi
       return { summary: text || "\u89c4\u5212\u751f\u6210\u5931\u8d25", days: [], transport: [], hotels: [], restaurants: [] };
     }
   }
-
   if (opts.provider === "DASHSCOPE") {
     const model = process.env.DASHSCOPE_MODEL || "qwen-plus";
-    const structure =
-      `\u8bf7\u4ec5\u8fd4\u56de\u7eaf JSON\uff0c\u4e0d\u8981\u5176\u4ed6\u6587\u672c\u3002
-       JSON schema:
-       {
-         "summary": "string",
-         "days": [{
-           "day": "number",
-           "activities": [{
-             "timeSlot": "\u4e0a\u5348|\u4e0b\u5348|\u665a\u4e0a",
-             "name": "string",
-             "address": "string(optional)",
-             "city": "string(optional)",
-             "lat": "number(optional)",
-             "lng": "number(optional)"
-           }],
-           "notes": "string(optional)",
-           "route": { "order": ["<activity name 1>", "<activity name 2>", "<activity name 3>"] }
-         }],
-         "transport": ["string"],
-         "hotels": ["string"],
-         "restaurants": ["string"]
-       }
-       \u8981\u6c42\uff1a
-       - \u6bcf\u5929\u5185\u5bb9\u4e0d\u5f97\u91cd\u590d\uff0c\u4e0d\u540c\u504f\u597d\u548c\u5730\u70b9\u3002
-       - \u7ed9\u51fa\u5177\u4f53\u5730\u5740/\u540d\u79f0\uff0c\u4fbf\u4e8e\u5730\u7406\u7f16\u7801\uff1b\u6709\u5750\u6807\u5219\u4f9d\u7167 lat/lng \u586b\u5199\u3002
-       - \u8def\u7ebf\u987a\u5e8f\u4ee5 route.order \u4e3a\u51c6\u3002`;
-    const prompt =
-      `请仅返回纯 JSON，不要包含任何多余文本。JSON 必须包含字段：
-       summary: 字符串，总览摘要；
-       days: 数组，每天为对象 { day: 天数编号, activities: [ "上午：<地点或活动>", "下午：<地点或活动>", "晚上：<地点或活动>" ], notes: 可选说明 }；
-       transport: 字符串数组（如 地铁/出租车/步行/公交/高铁/飞机）；
-       hotels: 字符串数组（推荐酒店名称，尽量包含地名）；
-       restaurants: 字符串数组（推荐餐厅名称，尽量包含地名）。
-       要求：
-       - 必须结合用户偏好（${input.preferences.join("、") || "无"}）生成差异化的每日安排，避免重复。
-       - 尽量给出真实地名（如“道顿堀美食街”“上野动物园”等），便于前端地理编码。
-       - 注意亲子/动漫/美食偏好分别给出适合的地点或活动。
-       - 控制每日行程强度合理（步行/交通时间），并体现晚间轻松活动。
-       - 输出必须是有效 JSON。`;
-
-    const body = { model, input: 
-      `目的地：${input.destination}；天数：${input.days}；预算：${input.budget}；人数：${input.people}；偏好：${input.preferences.join(",")}
-       ${prompt}`
-    };
-
+    const structure = `请仅返回纯 JSON...`;
+    const promptText =
+      `目的地：${input.destination}；天数：${input.days}；预算：${budget}；人数：${input.people}；偏好：${prefs.join(",")}
+       请仅返回纯 JSON，不要包含任何多余文本。${structure}`;
+    const body = { model, input: promptText, parameters: { result_format: "text" } };
+    const cacheKey = `${opts.provider}:${input.destination}:${input.days}:${input.budget}:${input.people}:${(input.preferences || []).join(",")}`;
+    const now = Date.now();
+    const cached = LLM_CACHE.get(cacheKey);
+    if (cached && (now - cached.ts) < LLM_CACHE_TTL_MS) {
+        return cached.data;
+    }
     const resp = await fetch("https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${opts.apiKey}` },
@@ -242,7 +211,6 @@ export async function estimateBudget(input: BudgetInput, opts: { provider: Provi
       const parsed = JSON.parse(text);
       return parsed;
     } catch {
-      // 兜底：若模型返回非 JSON，则当作摘要，其他字段置空
       return { summary: text || "\u89c4\u5212\u751f\u6210\u5931\u8d25", days: [], transport: [], hotels: [], restaurants: [] };
     }
   }

@@ -53,17 +53,73 @@ npm run dev --prefix client
 ```bash
 docker build -t ai-travel-planner:latest .
 ```
-
 ```bash
 docker run -p 8080:8080 -e LLM_MODE=MOCK ai-travel-planner:latest
 ```
+打开浏览器访问 `http://localhost:8080/`。
 
-访问 `http://localhost:8080/`。
+【基础镜像说明】当前 Dockerfile 使用 ECR Public 的 Node 24 基础镜像（`public.ecr.aws/docker/library/node:24` 与 `24-slim`），避免国内对 Docker Hub/阿里云公共库的登录限制。本地构建前可选预拉：
+```bash
+docker pull public.ecr.aws/docker/library/node:24
+```
 
-### 5) 提交要求
-- GitHub 仓库：请将本项目推送至你的 GitHub。
-- 提交一个 PDF：包含仓库地址与 README 文档（可将 README 转为 PDF）。
-- Docker 镜像：本项目已提供 Dockerfile；你可通过 GitHub Actions 推送到阿里云镜像仓库（需填充密钥）。
+### 5) 推送到阿里云个人镜像仓库（ACR Personal）
+你已创建的仓库示例：
+- 公网：`crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com/sdafdsfa/adsafd`
+- VPC：`crpi-454gg1xskyx1ktlm-vpc.cn-hangzhou.personal.cr.aliyuncs.com/sdafdsfa/adsafd`
+
+本地打包并推送：
+```bash
+docker build -t crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com/sdafdsfa/adsafd:latest .
+```
+```bash
+docker login --username=<你的用户名> crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com
+```
+```bash
+docker push crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com/sdafdsfa/adsafd:latest
+```
+
+拉取与运行（评测方）：
+```bash
+docker pull crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com/sdafdsfa/adsafd:latest
+```
+```bash
+docker run -p 8080:8080 -e LLM_MODE=MOCK crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com/sdafdsfa/adsafd:latest
+```
+
+如需阿里云百炼（DashScope）：
+```bash
+docker run -p 8080:8080 -e LLM_MODE=DASHSCOPE -e LLM_API_KEY=<你的百炼Key> crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com/sdafdsfa/adsafd:latest
+```
+
+### 6) 使用 GitHub Actions 自动构建与推送
+仓库的 GitHub Actions 工作流（`.github/workflows/docker.yml`）将把镜像推送到你的 ACR Personal。
+需要在 GitHub 仓库 Settings → Secrets and variables → Actions 添加以下 Secrets：
+- `REGISTRY_HOST`: `crpi-454gg1xskyx1ktlm.cn-hangzhou.personal.cr.aliyuncs.com`
+- `REGISTRY_REPO`: `sdafdsfa/adsafd`
+- `REGISTRY_USERNAME`: 你的 ACR 登录用户名（如 “dong豪”，建议使用英文或令牌）
+- `REGISTRY_PASSWORD`: ACR 登录密码或访问令牌
+
+触发方式：
+- 推送到 `main` 分支自动触发；
+- 手动在 Actions 页面选择该工作流并点击 “Run workflow” 触发。
+
+工作流会打两个 tag：`latest` 与 `gh-<commit-sha>`，便于回滚与定位构建。工作流还会导出 `ai-travel-planner.tar` 构建产物，供直接下载运行：
+```bash
+docker load -i ai-travel-planner.tar
+```
+```bash
+docker run -p 8080:8080 -e LLM_MODE=MOCK <loaded-image-name>:latest
+```
+
+## 提交要求（PDF + 仓库 + 镜像）
+- 提交一个 PDF 文件，至少包含：
+  - GitHub 仓库地址：`https://github.com/<你的账户>/ai-travel-planner`
+  - 部署与运行说明（可直接将本 README 相关章节导出为 PDF）
+  - 镜像仓库地址（公网/VPC）与拉取运行命令
+- 项目代码提交在 GitHub 上，保留尽可能多的、细粒度的提交记录。
+- 提供可直接下载运行的 docker 镜像文件（GitHub Actions 构建产物的 `ai-travel-planner.tar`），并在 README 说明如何加载运行。
+- 若你用的不是阿里云百炼的 API key，请在 README 中提供评测专用的 `LLM_API_KEY`（或留评测说明并单独提供），保证至少 3 个月内可用，供助教批改。
 
 ## 环境变量（server/.env）
 - `LLM_MODE`: `MOCK`（默认）、`OPENAI` 或 `DASHSCOPE`
@@ -119,4 +175,4 @@ npm install --prefix d:\javacode\name1\client
 ```bash
 npm install --prefix d:\javacode\name1\server
 ```
-- 可在任意 IDE 的“终端”面板执行：如 IntelliJ IDEA（你的项目已有 `.idea` 目录）、WebStorm、VS Code；不在“页面”中执行，而是在终端命令行中执行。
+- 可在任意 IDE 的“终端”面板执行：如 IntelliJ IDEA（你的项目已有 `.idea` 目录）、WebStorm、VS Code；不在“页面”中执行，是在终端命令行中执行。

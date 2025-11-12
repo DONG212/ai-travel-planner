@@ -3,8 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import planRouter from "./routes/plan";
-import budgetRouter from "./routes/budget";
+import planRouter from "./routes/plan.js";
+import budgetRouter from "./routes/budget.js";
 
 dotenv.config();
 

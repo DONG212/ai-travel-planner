@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { estimateBudget } from "../services/llm";
+import { estimateBudget } from "../services/llm.js";
 
 const router = Router();
 

@@ -49,34 +49,16 @@ npm run dev --prefix client
   - 或在请求头设置 `x-llm-key`（单次调用临时使用）。
 
 ### 4) 生产构建与 Docker
-构建 Docker 镜像并运行（本地）：
+构建 Docker 镜像并运行：
 ```bash
 docker build -t ai-travel-planner:latest .
 ```
+
 ```bash
 docker run -p 8080:8080 -e LLM_MODE=MOCK ai-travel-planner:latest
 ```
+
 访问 `http://localhost:8080/`。
-
-新增：镜像直接下载运行（满足“可直接下载运行的 docker image 文件”）
-- 若你从 GitHub Releases 或构建产物下载了 `ai-travel-planner.tar`：
-```bash
-docker load -i ai-travel-planner.tar
-```
-```bash
-docker run -p 8080:8080 -e LLM_MODE=MOCK ai-travel-planner:latest
-```
-
-使用阿里云镜像仓库（ACR）
-```bash
-docker pull registry.cn-<region>.aliyuncs.com/<your-namespace>/ai-travel-planner:latest
-docker run -p 8080:8080 -e LLM_MODE=MOCK registry.cn-<region>.aliyuncs.com/<your-namespace>/ai-travel-planner:latest
-```
-
-常见运行参数
-- `-e LLM_MODE=MOCK|OPENAI|DASHSCOPE`
-- `-e LLM_API_KEY=<你的评测 Key>`（当 `LLM_MODE` 为 `OPENAI` 或 `DASHSCOPE` 时）
-- `-e PORT=<端口>`（默认 8080）
 
 ### 5) 提交要求
 - GitHub 仓库：请将本项目推送至你的 GitHub。
@@ -137,4 +119,4 @@ npm install --prefix d:\javacode\name1\client
 ```bash
 npm install --prefix d:\javacode\name1\server
 ```
-- 可在任意 IDE 的“终端”面板执行：如 IntelliJ IDEA（你的项目已有 `.idea` 目录）、WebStorm、VS Code；不在“页面”中执行，就是在终端命令行中执行。
+- 可在任意 IDE 的“终端”面板执行：如 IntelliJ IDEA（你的项目已有 `.idea` 目录）、WebStorm、VS Code；不在“页面”中执行，而是在终端命令行中执行。

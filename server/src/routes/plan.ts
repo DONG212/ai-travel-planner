@@ -1,6 +1,6 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { z } from "zod";
-import { generateItinerary } from "../services/llm.js";
+import { generateItinerary } from "../services/llm";
 
 const router = Router();
 
@@ -12,7 +12,7 @@ const PlanInputSchema = z.object({
   preferences: z.array(z.string()).default([])
 });
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", async (req, res) => {
   const parse = PlanInputSchema.safeParse(req.body);
   if (!parse.success) {
     return res.status(400).json({ error: "Invalid input", details: parse.error.format() });

@@ -3,6 +3,7 @@ name: Build and Push Docker
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   docker:
@@ -28,18 +29,29 @@ jobs:
           npm ci
           npm run build
 
-      - name: Build docker image
-        run: docker build -t ${{ secrets.REGISTRY }}/ai-travel-planner:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Login to registry
-        run: echo ${{ secrets.REGISTRY_PASSWORD }} | docker login ${{ secrets.REGISTRY }} -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+      - name: Login to Aliyun Personal ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY_HOST }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Push image
-        run: docker push ${{ secrets.REGISTRY }}/ai-travel-planner:latest
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/${{ secrets.REGISTRY_REPO }}:latest
+            ${{ secrets.REGISTRY_HOST }}/${{ secrets.REGISTRY_REPO }}:gh-${{ github.sha }}
 
-      # 额外：保存镜像为 tar，上传为构建产物，满足“可直接下载运行”要求
-      - name: Save image as tar
-        run: docker save ${{ secrets.REGISTRY }}/ai-travel-planner:latest -o ai-travel-planner.tar
+      - name: Export image as tar
+        run: docker pull ${{ secrets.REGISTRY_HOST }}/${{ secrets.REGISTRY_REPO }}:gh-${{ github.sha }} && docker save ${{ secrets.REGISTRY_HOST }}/${{ secrets.REGISTRY_REPO }}:gh-${{ github.sha }} -o ai-travel-planner.tar
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4

@@ -1,6 +1,6 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { estimateBudget } from "../services/llm";
+import { estimateBudget } from "../services/llm.js";
 
 const router = Router();
 
@@ -11,7 +11,7 @@ const BudgetInputSchema = z.object({
   planSummary: z.string().default("")
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req: Request, res: Response) => {
   const parse = BudgetInputSchema.safeParse(req.body);
   if (!parse.success) {
     return res.status(400).json({ error: "Invalid input", details: parse.error.format() });

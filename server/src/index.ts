@@ -1,10 +1,10 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import planRouter from "./routes/plan";
-import budgetRouter from "./routes/budget";
+import planRouter from "./routes/plan.js";
+import budgetRouter from "./routes/budget.js";
 
 dotenv.config();
 
@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 const publicDir = path.resolve(__dirname, "../public");
 
 app.use(express.static(publicDir));
-app.get("*", (_req, res) => {
+app.get("*", (_req: Request, res: Response) => {
   res.sendFile(path.join(publicDir, "index.html"));
 });
 

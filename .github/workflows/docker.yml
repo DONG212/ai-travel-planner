@@ -14,18 +14,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Build client
         run: |
           cd client
-          npm ci
+          npm install
           npm run build
 
       - name: Build server
         run: |
           cd server
-          npm ci
+          npm install
           npm run build
 
       - name: Build docker image

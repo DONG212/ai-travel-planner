@@ -17,15 +17,19 @@ jobs:
           node-version: 20
 
       - name: Build client
+        env:
+          NODE_ENV: development
         run: |
           cd client
-          npm install
+          npm install --include=dev
           npm run build
 
       - name: Build server
+        env:
+          NODE_ENV: development
         run: |
           cd server
-          npm install
+          npm install --include=dev
           npm run build
 
       - name: Build docker image

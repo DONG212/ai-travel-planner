@@ -1,0 +1,38 @@
+name: Build and Push Docker
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Build client
+        run: |
+          cd client
+          npm ci
+          npm run build
+
+      - name: Build server
+        run: |
+          cd server
+          npm ci
+          npm run build
+
+      - name: Build docker image
+        run: docker build -t ${{ secrets.REGISTRY }}/ai-travel-planner:latest .
+
+      - name: Login to registry
+        run: echo ${{ secrets.REGISTRY_PASSWORD }} | docker login ${{ secrets.REGISTRY }} -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+
+      - name: Push image
+        run: docker push ${{ secrets.REGISTRY }}/ai-travel-planner:latest
